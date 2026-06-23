@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments :: head('Spiel Tippen')}"></head>
+
+<body class="bg-slate-900 text-slate-100 font-sans flex flex-col min-h-screen selection:bg-cyan-400 selection:text-slate-900">
+
+<nav th:replace="~{fragments :: navbar}"></nav>
+
+<main class="container mx-auto p-4 mt-6 flex-grow max-w-3xl">
+
+  <div class="mb-6 flex justify-between items-center">
+    <a href="/" class="text-slate-400 hover:text-cyan-400 transition font-bold uppercase tracking-wide text-sm flex items-center">
+      <span class="mr-2">←</span> Zurück zur Startseite
+    </a>
+    <a th:href="@{/match/{nextId}(nextId=${match.id + 1})}"
+       class="text-slate-400 hover:text-cyan-400 transition font-bold uppercase tracking-wide text-sm flex items-center">
+      Nächstes Spiel <span class="ml-2">→</span>
+    </a>
+  </div>
+
+  <div th:if="${success}" th:text="${success}" class="bg-emerald-500/20 border border-emerald-500 text-emerald-400 text-center p-4 rounded-xl font-bold mb-6 shadow-sm"></div>
+  <div th:if="${error}" th:text="${error}" class="bg-rose-500/20 border border-rose-500 text-rose-400 text-center p-4 rounded-xl font-bold mb-6 shadow-sm"></div>
+
+  <div class="bg-slate-800 rounded-xl shadow-xl overflow-hidden border border-slate-700 relative mb-10">
+    <div class="h-2 w-full shrink-0" th:style="${matchGradient}"></div>
+
+    <div class="p-8 text-center border-b border-slate-700/50 flex flex-col items-center"> <p class="text-sm text-slate-400 mb-6 font-bold uppercase tracking-widest"
+                                                                                             th:text="${#temporals.format(match.kickoffDate, 'dd.MM.yyyy - HH:mm')} + ' Uhr'"></p>
+
+      <div class="flex justify-between items-center w-full text-lg sm:text-3xl md:text-4xl font-black mb-8 uppercase text-slate-100">
+
+        <div class="flex-1 min-w-0 text-right pr-2 sm:pr-4 md:pr-8 leading-tight">
+          <span th:text="${homeTeamDetails != null ? homeTeamDetails.name : match.homeTeam}" class="drop-shadow-md block">Deutschland</span>
+        </div>
+
+        <div class="shrink-0 text-center mx-1 sm:mx-2">
+          <div th:if="${match.status.name() == 'FINISHED'}" class="inline-block bg-slate-900 border-2 border-cyan-400 rounded-lg px-3 sm:px-5 py-2 shadow-[0_0_15px_rgba(0,255,255,0.3)] whitespace-nowrap">
+            <span class="text-cyan-400 text-2xl sm:text-3xl md:text-4xl tracking-widest" th:text="${match.goalsHome} + ' : ' + ${match.goalsAway}"></span>
+          </div>
+
+          <span th:unless="${match.status.name() == 'FINISHED'}" class="text-slate-600 text-xl sm:text-2xl font-bold px-2 sm:px-4">vs</span>
+        </div>
+
+        <div class="flex-1 min-w-0 text-left pl-2 sm:pl-4 md:pl-8 leading-tight">
+          <span th:text="${awayTeamDetails != null ? awayTeamDetails.name : match.awayTeam}" class="drop-shadow-md block">Argentinien</span>
+        </div>
+
+      </div>
+
+      <div class="inline-block bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 uppercase tracking-widest text-sm font-bold text-slate-400">
+        Status: <span th:text="${match.status}" th:classappend="${match.status.name() == 'FINISHED'} ? 'text-cyan-400' : 'text-rose-500'">UPCOMING</span>
+      </div>
+    </div>
+
+    <div class="p-8 bg-slate-900/30 border-b border-slate-700/50">
+      <h2 class="text-2xl font-black text-center mb-6 uppercase tracking-wider text-slate-100">
+        <span class="text-cyan-400 mr-2"></span> Dein Tipp
+      </h2>
+
+      <form th:action="@{/match/{id}/predict(id=${match.id})}" method="post" class="max-w-md mx-auto">
+
+        <div class="flex justify-center items-center space-x-4 md:space-x-8 mb-8">
+          <div class="text-center">
+            <label class="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-wide truncate w-24 mx-auto"
+                   th:text="${homeTeamDetails != null ? homeTeamDetails.name : match.homeTeam}">Heim</label>
+            <input type="number" name="homeGoals" min="0" max="20" required
+                   th:value="${userPrediction != null ? userPrediction.predictionGoalHome : ''}"
+                   th:disabled="${isLocked}"
+                   class="w-20 md:w-24 bg-slate-900 text-slate-100 border-2 border-slate-700 text-center text-3xl font-black rounded-lg p-3 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed">
+          </div>
+
+          <span class="text-slate-600 text-3xl font-black mt-6">:</span>
+
+          <div class="text-center">
+            <label class="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-wide truncate w-24 mx-auto"
+                   th:text="${awayTeamDetails != null ? awayTeamDetails.name : match.awayTeam}">Auswärts</label>
+            <input type="number" name="awayGoals" min="0" max="20" required
+                   th:value="${userPrediction != null ? userPrediction.predictionGoalAway : ''}"
+                   th:disabled="${isLocked}"
+                   class="w-20 md:w-24 bg-slate-900 text-slate-100 border-2 border-slate-700 text-center text-3xl font-black rounded-lg p-3 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed">
+          </div>
+        </div>
+
+        <div class="text-center">
+          <button type="submit" th:if="${!isLocked}"
+                  class="w-full bg-cyan-500 text-slate-900 font-black py-4 px-8 rounded-lg hover:bg-cyan-400 transition uppercase tracking-widest shadow-[0_0_15px_rgba(0,255,255,0.3)]">
+            Tipp speichern
+          </button>
+
+          <div th:if="${isLocked}" class="bg-slate-900 border border-slate-700 text-slate-500 font-bold py-4 px-8 rounded-lg uppercase tracking-widest flex justify-center items-center">
+            <span class="mr-2"></span> Tippabgabe gesperrt
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="p-8 bg-slate-800 relative overflow-hidden">
+      <div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]"></div>
+
+      <h3 class="text-xl font-black text-center mb-6 uppercase tracking-wider text-slate-100">
+        <span class="text-purple-400 mr-2"></span> Abgegebene Tipps
+      </h3>
+
+      <div th:if="${#lists.isEmpty(predictions)}" class="text-center text-slate-500 font-bold italic uppercase tracking-wide p-4">
+        Bisher hat noch niemand getippt.
+      </div>
+
+      <div th:unless="${#lists.isEmpty(predictions)}" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div th:each="pred : ${predictions}" class="bg-slate-900 border border-slate-700 rounded-lg p-4 flex justify-between items-center shadow-sm">
+
+          <span class="text-slate-300 font-bold uppercase tracking-wide truncate pr-2" th:text="${pred.user.firstname} + ' ' + ${pred.user.lastname}">Name</span>
+
+          <div class="flex items-center space-x-3 shrink-0">
+
+              <span class="text-cyan-400 font-black text-xl bg-slate-800 px-4 py-1 rounded-md border border-cyan-400/30 shadow-[0_0_8px_rgba(0,255,255,0.1)] whitespace-nowrap"
+                    th:text="${pred.predictionGoalHome} + ' : ' + ${pred.predictionGoalAway}">0 : 0</span>
+
+            <span th:if="${match.status.name() == 'FINISHED'}"
+                  class="text-sm font-black px-2 py-1 rounded-md whitespace-nowrap shadow-sm border"
+                  th:classappend="${pred.pointsEarned > 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/50' : 'bg-slate-800 text-slate-600 border-slate-700'}"
+                  th:text="'+ ' + ${pred.pointsEarned}">+ 0</span>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+</body>
+</html>

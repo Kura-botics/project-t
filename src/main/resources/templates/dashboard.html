@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments :: head('Familien Tippspiel - Startseite')}"></head>
+
+<body class="bg-slate-900 text-slate-100 font-sans flex flex-col min-h-screen selection:bg-cyan-400 selection:text-slate-900">
+
+<nav th:replace="~{fragments :: navbar}"></nav>
+
+<main class="container mx-auto p-4 mt-6 flex-grow max-w-6xl">
+
+    <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-2 mt-2">
+        <h1 class="text-3xl font-black text-slate-100 uppercase tracking-wider">
+            <span class="text-cyan-400">///</span> Heutige Spiele
+        </h1>
+        <a href="/matches" class="text-cyan-400 font-bold hover:text-cyan-300 transition hover:underline">Zum Spielplan →</a>
+    </div>
+
+    <div th:if="${#lists.isEmpty(todaysMatches)}" class="bg-slate-800 rounded-xl p-8 text-center border border-slate-700 shadow-xl mb-10">
+        <p class="text-2xl text-cyan-400 font-black mb-2 uppercase tracking-widest">Spielfrei</p>
+        <p class="text-slate-400 font-semibold">Keine Matches am heutigen Tag.</p>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(todaysMatches)}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+
+        <div th:each="match : ${todaysMatches}" class="bg-slate-800 rounded-xl shadow-xl overflow-hidden border border-slate-700 relative group">
+
+            <div class="h-2 w-full bg-gradient-to-r from-rose-500 via-cyan-400 to-purple-600 relative z-20"></div>
+
+            <div class="absolute inset-y-0 left-0 w-1/2 bg-contain bg-no-repeat bg-left opacity-20 mix-blend-screen z-0"
+                 th:style="'background-image: url(' + ${teamMap[match.homeTeam]?.crest} + ');
+                            -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 80%);
+                            mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 80%);'">
+            </div>
+
+            <div class="absolute inset-y-0 right-0 w-1/2 bg-contain bg-no-repeat bg-right opacity-20 mix-blend-screen z-0"
+                 th:style="'background-image: url(' + ${teamMap[match.awayTeam]?.crest} + ');
+                            -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 80%);
+                            mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 80%);'">
+            </div>
+
+            <div class="p-6 text-center relative z-10">
+                <p class="text-xs text-slate-400 mb-4 font-bold uppercase tracking-widest"
+                   th:text="${#temporals.format(match.kickoffDate, 'HH:mm')} + ' Uhr'"></p>
+
+                <div class="flex justify-center items-center space-x-6 text-3xl font-black mb-6 text-slate-100 uppercase">
+                    <span th:text="${match.homeTeam}" class="drop-shadow-sm">GER</span>
+                    <span class="text-slate-500 text-lg font-bold">vs</span>
+                    <span th:text="${match.awayTeam}" class="drop-shadow-sm">ARG</span>
+                </div>
+
+                <div th:if="${match.status.name() == 'FINISHED'}" class="inline-block mb-6 bg-slate-900 border-2 border-cyan-400 rounded-lg px-6 py-2 shadow-[0_0_10px_rgba(0,255,255,0.2)]">
+                    <span class="text-2xl text-cyan-400 font-black" th:text="${match.goalsHome} + ' : ' + ${match.goalsAway}"></span>
+                </div>
+
+                <div th:unless="${match.status.name() == 'FINISHED'}" class="text-sm text-rose-500 font-black mb-6 uppercase tracking-widest bg-rose-500/10 inline-block px-4 py-1 rounded shadow-sm backdrop-blur-sm">
+                    <span th:text="${match.status}">UPCOMING</span>
+                </div>
+
+                <a th:href="@{/match/{id}(id=${match.id})}"
+                   class="block w-full bg-slate-700/80 backdrop-blur-sm text-cyan-400 border border-slate-600 font-bold py-3 rounded-lg hover:bg-slate-600 hover:border-cyan-400 transition uppercase tracking-wide shadow-sm relative z-20">
+                    Tippen & Details
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div sec:authorize="isAuthenticated()" class="bg-gradient-to-br from-slate-800 to-slate-900 text-slate-100 rounded-xl shadow-xl p-6 mb-10 border border-slate-700 relative overflow-hidden">
+        <div class="absolute left-0 top-0 bottom-0 w-2 bg-rose-500 shadow-[0_0_10px_rgba(225,29,72,0.4)]"></div>
+
+        <h2 class="text-2xl font-black mb-4 uppercase tracking-wider ml-4">
+            Weltmeister
+            <span class="text-sm font-bold text-cyan-400 ml-2 bg-cyan-400/10 px-2 py-1 rounded">+15 Pkt</span>
+        </h2>
+
+        <div th:if="${winnerSuccess}" th:text="${winnerSuccess}" class="bg-emerald-500/20 border border-emerald-500 text-emerald-400 p-3 rounded mb-4 font-bold ml-4"></div>
+        <div th:if="${winnerError}" th:text="${winnerError}" class="bg-rose-500/20 border border-rose-500 text-rose-400 p-3 rounded mb-4 font-bold ml-4"></div>
+
+        <form th:if="${!isTournamentLocked}" th:action="@{/winner/predict}" method="post" class="flex flex-col sm:flex-row gap-4 items-center ml-4">
+            <select name="team" required class="bg-slate-900 text-slate-100 border-2 border-slate-700 rounded-lg p-3 text-xl w-full sm:w-auto focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 focus:outline-none font-bold uppercase transition">
+                <option value="" disabled th:selected="${winnerPrediction == null}">-- Team wählen --</option>
+                <option th:each="t : ${teams}" th:value="${t}" th:text="${t}" th:selected="${winnerPrediction != null and winnerPrediction.team == t}"></option>
+            </select>
+            <button type="submit" class="bg-cyan-500 text-slate-900 font-black py-3 px-8 rounded-lg hover:bg-cyan-400 transition w-full sm:w-auto uppercase tracking-wide shadow-[0_0_10px_rgba(0,255,255,0.3)]">
+                Speichern
+            </button>
+        </form>
+
+        <div th:if="${isTournamentLocked}" class="flex items-center space-x-4 bg-slate-900 p-4 rounded-lg border border-slate-700 ml-4">
+            <span class="text-4xl">🔒</span>
+            <div>
+                <p class="font-bold text-lg text-slate-300">Dein Finaler Tipp:
+                    <span th:if="${winnerPrediction != null}" th:text="${winnerPrediction.team}" class="text-3xl text-cyan-400 font-black ml-2 tracking-widest drop-shadow-sm">GER</span>
+                    <span th:if="${winnerPrediction == null}" class="text-rose-500 font-bold ml-2">Kein Tipp (0 Pkt)</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl shadow-xl p-6 mb-6 border border-slate-700 relative overflow-hidden">
+        <div class="absolute left-0 top-0 bottom-0 w-2 bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]"></div>
+
+        <div class="flex justify-between items-center mb-6 ml-4">
+            <h2 class="text-2xl font-black text-slate-100 uppercase tracking-wider">
+                Top 3 Ranking
+            </h2>
+            <a href="/scoreboard" class="text-cyan-400 font-bold hover:text-cyan-300 transition hover:underline">Zur Tabelle →</a>
+        </div>
+
+        <div class="overflow-x-auto ml-4">
+            <table class="min-w-full table-auto">
+
+                <thead class="bg-slate-900 text-slate-400 uppercase text-xs tracking-widest font-black border-b border-slate-700">
+                <tr>
+                    <th class="py-5 px-6 text-left whitespace-nowrap">Platz</th>
+                    <th class="py-5 px-6 text-left whitespace-nowrap">Spieler</th>
+                    <th class="py-5 px-6 text-center text-cyan-400 whitespace-nowrap">Punkte</th>
+                    <th class="py-5 px-6 text-center whitespace-nowrap" title="Exakte Ergebnisse">Exakt (RT)</th>
+                    <th class="py-5 px-6 text-center whitespace-nowrap" title="Richtige Tordifferenz">Diff. (RTD)</th>
+                    <th class="py-5 px-6 text-center whitespace-nowrap" title="Richtige Tendenz">Tendenz (RS)</th>
+                </tr>
+                </thead>
+
+                <tbody class="text-slate-300 text-sm font-bold">
+
+                <tr th:if="${#lists.isEmpty(top3Leaderboard)}">
+                    <td colspan="6" class="py-10 text-center text-slate-500 italic uppercase tracking-wide">Das Turnier hat noch nicht begonnen</td>
+                </tr>
+
+                <tr th:each="score, iterStat : ${top3Leaderboard}" class="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
+
+                    <td class="py-4 px-6 text-left w-16">
+                        <span th:if="${iterStat.count == 1}" class="text-2xl drop-shadow-md">1.</span>
+                        <span th:if="${iterStat.count == 2}" class="text-2xl drop-shadow-md">2.</span>
+                        <span th:if="${iterStat.count == 3}" class="text-2xl drop-shadow-md">3.</span>
+                        <span th:if="${iterStat.count > 3}" th:text="${iterStat.count} + '.'" class="font-black text-xl text-slate-600 ml-2">4.</span>
+                    </td>
+
+                    <td class="py-4 px-6 text-left whitespace-nowrap">
+                        <span th:text="${score.user.firstname} + ' ' + ${score.user.lastname}" class="text-lg tracking-wide uppercase text-slate-100">Name</span>
+                    </td>
+
+                    <td class="py-4 px-6 text-center">
+                        <span th:text="${score.totalPoints}" class="bg-slate-900 text-cyan-400 border border-cyan-400/30 py-2 px-5 rounded-lg font-black text-xl shadow-sm">0</span>
+                    </td>
+
+                    <td class="py-4 px-6 text-center text-slate-500 text-lg" th:text="${score.cg}">0</td>
+                    <td class="py-4 px-6 text-center text-slate-500 text-lg" th:text="${score.cgd}">0</td>
+                    <td class="py-4 px-6 text-center text-slate-500 text-lg" th:text="${score.cw}">0</td>
+
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+</body>
+</html>

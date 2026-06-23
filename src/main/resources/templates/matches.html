@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments :: head('Kompletter Spielplan - WM 2026')}"></head>
+
+<body class="bg-slate-900 text-slate-100 font-sans flex flex-col min-h-screen selection:bg-cyan-400 selection:text-slate-900">
+
+<nav th:replace="~{fragments :: navbar}"></nav>
+
+<main class="container mx-auto p-4 mt-6 flex-grow max-w-6xl">
+
+  <div class="mb-8 border-b border-slate-700 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black text-slate-100 uppercase tracking-wider">
+        <span class="text-cyan-400">///</span> Kompletter Spielplan
+      </h1>
+      <p class="text-slate-400 font-bold mt-2 tracking-wide">Alle Spiele der WM 2026 im Überblick.</p>
+    </div>
+
+    <button id="filterBtn" class="bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-600 hover:border-cyan-400 px-4 py-2.5 rounded-lg font-bold text-xs sm:text-sm uppercase tracking-wider transition flex items-center justify-center space-x-2 shadow-sm cursor-pointer shrink-0">
+      <span id="filterText">Beendete ausblenden</span>
+    </button>
+  </div>
+
+  <div th:if="${#lists.isEmpty(matches)}" class="bg-slate-800 rounded-xl p-8 text-center border border-slate-700 shadow-xl mb-10">
+    <p class="text-2xl text-cyan-400 font-black mb-2 uppercase tracking-widest">Spielplan Leer</p>
+    <p class="text-slate-400 font-semibold">Die Spiele werden in Kürze von der API geladen. Falls nicht, KRISE!</p>
+  </div>
+
+  <div th:unless="${#lists.isEmpty(matches)}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10" id="matchGrid">
+
+    <div th:each="match : ${matches}"
+         th:attr="data-status=${match.status.name()}"
+         class="match-card bg-slate-800 rounded-xl shadow-xl flex flex-col overflow-hidden border border-slate-700 relative group transition-all duration-200">
+
+      <div class="h-2 w-full bg-gradient-to-r from-rose-500 via-cyan-400 to-purple-600 shrink-0"></div>
+
+      <div class="p-5 text-center flex-grow flex flex-col justify-center">
+
+        <p class="text-xs text-slate-400 mb-4 font-bold uppercase tracking-widest"
+           th:text="${#temporals.format(match.kickoffDate, 'dd.MM.yyyy - HH:mm')} + ' Uhr'"></p>
+
+        <div class="flex justify-center items-center space-x-4 text-3xl font-black mb-6 text-slate-100 uppercase">
+          <span th:text="${match.homeTeam}" class="drop-shadow-sm">GER</span>
+          <span class="text-slate-500 text-base font-bold">vs</span>
+          <span th:text="${match.awayTeam}" class="drop-shadow-sm">ARG</span>
+        </div>
+
+        <div th:if="${match.status.name() == 'FINISHED'}" class="inline-block mb-4 bg-slate-900 border-2 border-cyan-400 rounded-lg px-6 py-2 shadow-[0_0_10px_rgba(0,255,255,0.2)] mx-auto">
+          <span class="text-2xl text-cyan-400 font-black" th:text="${match.goalsHome} + ' : ' + ${match.goalsAway}"></span>
+        </div>
+        <div th:unless="${match.status.name() == 'FINISHED'}" class="text-xs text-rose-500 font-black mb-4 uppercase tracking-widest bg-rose-500/10 inline-block px-4 py-1 rounded mx-auto">
+          <span th:text="${match.status}">UPCOMING</span>
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-900/50 mt-auto border-t border-slate-700">
+        <a th:href="@{/match/{id}(id=${match.id})}"
+           class="block text-center w-full bg-slate-700 text-cyan-400 border border-slate-600 font-bold py-2 rounded-lg hover:bg-slate-600 hover:border-cyan-400 transition uppercase tracking-wide text-sm shadow-sm">
+          Tippen & Details
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const filterBtn = document.getElementById("filterBtn");
+    const filterIcon = document.getElementById("filterIcon");
+    const filterText = document.getElementById("filterText");
+    const matchCards = document.querySelectorAll(".match-card");
+
+    let finishedHidden = false;
+
+    filterBtn.addEventListener("click", () => {
+      finishedHidden = !finishedHidden;
+
+      matchCards.forEach(card => {
+        if (card.getAttribute("data-status") === "FINISHED") {
+          card.style.display = finishedHidden ? "none" : "flex";
+        }
+      });
+
+      if (finishedHidden) {
+        filterText.textContent = "Alle anzeigen";
+        filterBtn.classList.add("bg-cyan-500/10", "border-cyan-400");
+      } else {
+        filterText.textContent = "Beendete ausblenden";
+        filterBtn.classList.remove("bg-cyan-500/10", "border-cyan-400");
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

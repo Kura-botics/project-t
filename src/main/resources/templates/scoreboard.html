@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments :: head('Komplette Rangliste - WM 2026')}"></head>
+
+<body class="bg-slate-900 text-slate-100 font-sans flex flex-col min-h-screen selection:bg-cyan-400 selection:text-slate-900">
+
+<nav th:replace="~{fragments :: navbar}"></nav>
+
+<main class="container mx-auto p-4 mt-6 flex-grow max-w-5xl">
+
+    <div class="mb-8 border-b border-slate-700 pb-4">
+        <h1 class="text-3xl font-black text-slate-100 uppercase tracking-wider">
+            <span class="text-cyan-400">///</span> Die Tabelle
+        </h1>
+        <p class="text-slate-400 font-bold mt-2 tracking-wide">Die komplette Übersicht aller Punkte und Statistiken.</p>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl shadow-xl overflow-hidden border border-slate-700 relative mb-8">
+
+        <div class="absolute left-0 top-0 bottom-0 w-2 bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)] z-10"></div>
+
+        <div class="overflow-x-auto pl-4 relative z-0">
+            <table class="min-w-full table-auto">
+
+                <thead class="bg-slate-900 text-slate-400 uppercase text-xs tracking-widest font-black border-b border-slate-700">
+                <tr>
+                    <th class="py-5 px-6 text-left whitespace-nowrap">Platz</th>
+                    <th class="py-5 px-6 text-left whitespace-nowrap">Spieler</th>
+                    <th class="py-5 px-6 text-center text-cyan-400 whitespace-nowrap">Punkte</th>
+                    <th class="py-5 px-6 text-center whitespace-nowrap" title="Exakte Ergebnisse">Exakt (RT)</th>
+                    <th class="py-5 px-6 text-center whitespace-nowrap" title="Richtige Tordifferenz">Diff. (RTD)</th>
+                    <th class="py-5 px-6 text-center whitespace-nowrap" title="Richtige Tendenz">Tendenz (RS)</th>
+                </tr>
+                </thead>
+
+                <tbody class="text-slate-300 text-sm font-bold">
+
+                <tr th:if="${#lists.isEmpty(leaderboard)}">
+                    <td colspan="6" class="py-10 text-center text-slate-500 italic uppercase tracking-wide">Das Turnier hat noch nicht begonnen</td>
+                </tr>
+
+                <tr th:each="score, iterStat : ${leaderboard}" class="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
+
+                    <td class="py-4 px-6 text-left w-16">
+                        <span th:if="${iterStat.count == 1}" class="text-2xl drop-shadow-md">1.</span>
+                        <span th:if="${iterStat.count == 2}" class="text-2xl drop-shadow-md">2.</span>
+                        <span th:if="${iterStat.count == 3}" class="text-2xl drop-shadow-md">3.</span>
+                        <span th:if="${iterStat.count > 3}" th:text="${iterStat.count} + '.'" class="font-black text-xl text-slate-600 ml-2">4.</span>
+                    </td>
+
+                    <td class="py-4 px-6 text-left whitespace-nowrap">
+                        <span th:text="${score.user.firstname} + ' ' + ${score.user.lastname}" class="text-lg tracking-wide uppercase text-slate-100">Name</span>
+                    </td>
+
+                    <td class="py-4 px-6 text-center">
+                        <span th:text="${score.totalPoints}" class="bg-slate-900 text-cyan-400 border border-cyan-400/30 py-2 px-5 rounded-lg font-black text-xl shadow-sm">0</span>
+                    </td>
+
+                    <td class="py-4 px-6 text-center text-slate-500 text-lg" th:text="${score.cg}">0</td>
+                    <td class="py-4 px-6 text-center text-slate-500 text-lg" th:text="${score.cgd}">0</td>
+                    <td class="py-4 px-6 text-center text-slate-500 text-lg" th:text="${score.cw}">0</td>
+
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl p-6 text-sm text-slate-300 border border-slate-700 shadow-xl relative overflow-hidden">
+
+        <div class="absolute left-0 top-0 bottom-0 w-2 bg-cyan-400 shadow-[0_0_10px_rgba(0,255,255,0.4)]"></div>
+
+        <h3 class="font-black text-slate-100 text-base mb-4 uppercase tracking-widest ml-4">
+            <span class="text-cyan-400 mr-2"></span> Punkte-Regelwerk
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 ml-4">
+            <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+                <strong class="block mb-2 text-rose-500 uppercase tracking-wide">Exakt (RT)</strong>
+                <span class="text-slate-400 font-medium">Das genaue Endergebnis erraten (z.B. Tipp 2:1, Spiel endet 2:1).</span>
+            </div>
+            <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+                <strong class="block mb-2 text-cyan-400 uppercase tracking-wide">Differenz (RTD)</strong>
+                <span class="text-slate-400 font-medium">Richtiger Sieger und korrekter Torabstand (z.B. Tipp 2:0, Spiel endet 3:1).</span>
+            </div>
+            <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+                <strong class="block mb-2 text-purple-400 uppercase tracking-wide">Tendenz (RS)</strong>
+                <span class="text-slate-400 font-medium">Den richtigen Sieger vorhergesagt (z.B. Tipp 1:0, Spiel endet 3:0).</span>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+</body>
+</html>
